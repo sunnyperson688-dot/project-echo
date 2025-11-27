@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROJECT ECHO: THE LONG JOURNEY</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;700&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- 样式保持不变，为了节省篇幅，这里折叠了样式代码 --- */
+        /* (请直接使用上一版完整的 CSS 样式，完全通用) */
+        :root { --c-amber: #ffb000; --c-dim: #594000; --c-acc: #ffb000; --bg-dark: #050505; --font-main: 'Share Tech Mono', 'Noto Serif SC', monospace; }
+        body { margin: 0; background: var(--bg-dark); color: var(--c-amber); font-family: var(--font-main); height: 100vh; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        #terminal-case { width: 95vw; max-width: 1000px; height: 92vh; border: 2px solid var(--c-dim); border-radius: 12px; background: #000; position: relative; display: flex; flex-direction: column; box-shadow: 0 0 40px rgba(255,176,0,0.05); overflow: hidden; }
+        #terminal-case::after { content: " "; position: absolute; top:0; left:0; right:0; bottom:0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%); background-size: 100% 4px; pointer-events: none; z-index: 100; }
+        #dashboard { height: 100px; border-bottom: 1px solid var(--c-dim); display: flex; flex-direction: column; padding: 10px 20px; font-size: 0.9rem; background: rgba(20, 10, 0, 0.3); }
+        .top-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .compass-bar { display: flex; gap: 15px; font-family: 'VT323'; font-size: 1.1rem; align-items: center; }
+        .val-group { display: flex; gap: 5px; }
+        .val-num { color: var(--c-acc); min-width: 20px; text-align: right; }
+        #audio-viz { width: 100%; height: 40px; opacity: 0.6; }
+        #log-area { flex: 1; padding: 25px 15%; overflow-y: auto; scroll-behavior: smooth; background: radial-gradient(circle at center, #111 0%, #000 100%); mask-image: linear-gradient(to bottom, transparent, black 5%, black 95%, transparent); }
+        #log-area::-webkit-scrollbar { width: 0px; }
+        .entry { margin-bottom: 25px; opacity: 0; animation: fadeIn 0.8s forwards; line-height: 1.7; text-shadow: 0 0 5px rgba(255,176,0,0.3); }
+        .entry.chapter { color: var(--c-acc); font-size: 1.2rem; border-bottom: 1px solid var(--c-dim); padding-bottom: 5px; margin-top: 40px; }
+        .entry.sys { color: #888; font-size: 0.8rem; font-family: 'VT323'; letter-spacing: 1px; }
+        .entry.ai { color: var(--c-acc); border-left: 3px solid var(--c-acc); padding-left: 15px; }
+        .entry.user { text-align: right; color: #fff; opacity: 0.8; font-style: italic; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #input-deck { min-height: 100px; border-top: 1px solid var(--c-dim); padding: 15px; display: flex; align-items: center; justify-content: center; background: #080808; z-index: 101; }
+        .choice-container { display: flex; gap: 15px; width: 100%; justify-content: center; flex-wrap: wrap; }
+        .choice-btn { background: rgba(0,0,0,0.5); border: 1px solid var(--c-dim); color: var(--c-amber); padding: 15px 25px; cursor: pointer; font-family: inherit; font-size: 1rem; flex: 1; max-width: 45%; transition: all 0.2s; position: relative; overflow: hidden; }
+        .choice-btn:hover { background: var(--c-amber); color: #000; border-color: var(--c-amber); box-shadow: 0 0 20px var(--c-amber); }
+        .choice-btn:active { transform: scale(0.98); }
+        #ai-input-wrapper { display: none; width: 80%; position: relative; }
+        #ai-input { width: 100%; background: transparent; border: none; border-bottom: 2px solid var(--c-acc); color: var(--c-acc); padding: 10px; font-family: inherit; font-size: 1.2rem; outline: none; }
+        .blinking-cursor::after { content: "_"; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+        #overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: #000; z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
+        .title-glitch { font-size: 3rem; text-shadow: 0 0 20px var(--c-amber); animation: pulse 3s infinite; }
+        @keyframes pulse { 50% { opacity: 0.6; text-shadow: 0 0 5px var(--c-amber); } }
+    </style>
+</head>
+<body>
+
+    <div id="overlay">
+        <div class="title-glitch">ECHO_PROTOCOL</div>
+        <p style="color:#666; margin-top:20px; font-family: 'Share Tech Mono'">[ 点击屏幕 // 初始化音频与神经连接 ]</p>
+    </div>
+
+    <div id="terminal-case">
+        <div id="dashboard">
+            <div class="top-row">
+                <span>USER: 漫游者</span>
+                <div class="compass-bar">
+                    <div class="val-group">M:<span class="val-num" id="v-tech">0</span></div>
+                    <div class="val-group">F:<span class="val-num" id="v-bio">0</span></div>
+                    <span style="color:#444">|</span>
+                    <div class="val-group">O:<span class="val-num" id="v-order">0</span></div>
+                    <div class="val-group">C:<span class="val-num" id="v-chaos">0</span></div>
+                </div>
+            </div>
+            <canvas id="audio-viz"></canvas>
+        </div>
+        <div id="log-area"></div>
+        <div id="input-deck">
+            <div class="choice-container" id="btn-area"></div>
+            <div id="ai-input-wrapper" class="blinking-cursor">
+                <input type="text" id="ai-input" placeholder="与 ECHO 核心对话..." autocomplete="off">
+            </div>
+        </div>
+    </div>
+
+    <script>
+// --- 游戏剧本 ---
+        const Story = [
+            {
+                chapter: "第一章：旧世界的余烬",
+                text: "你在充满辐射尘的废土上醒来。这里的法律早已失效。你发现了一处被遗弃的水培农场，里面还有最后一批未被污染的食物，但也有一群变异的难民在围攻这里。",
+                choices: [
+                    { text: "建立防线，独占资源", desc: "秩序+1 机械+1", effect: {order:1, tech:1} },
+                    { text: "打开大门，共享食物", desc: "混沌+1 血肉+1", effect: {chaos:1, bio:1} }
+                ]
+            },
+            {
+                chapter: "第一章：旧世界的余烬",
+                text: "你在难民中发现了一个患病的孩子。他的肺部正在衰竭。唯一的救治方法是给他换上从死人身上拆下来的、生锈的机械肺。",
+                choices: [
+                    { text: "进行机械改造手术", desc: "机械+2", effect: {tech:2} },
+                    { text: "让他自然离去，保持人类尊严", desc: "血肉+2", effect: {bio:2} }
+                ]
+            },
+            {
+                chapter: "第二章：霓虹之下",
+                text: "你穿越废土，来到了由财阀控制的‘不夜城’。这里的市长其实是一个超级AI，它管理着一切，犯罪率为0，但市民没有隐私。",
+                choices: [
+                    { text: "赞美AI的高效统治", desc: "秩序+2 机械+1", effect: {order:2, tech:1} },
+                    { text: "加入地下黑客反抗军", desc: "混沌+2", effect: {chaos:2} }
+                ]
+            },
+            {
+                chapter: "第二章：霓虹之下",
+                text: "反抗军交给你一个病毒，可以瘫痪城市的监控系统，让人们重获自由，但也会导致电力系统崩溃，许多依赖维生舱的人会死。",
+                choices: [
+                    { text: "拒绝释放病毒，维持现状", desc: "秩序+2", effect: {order:2} },
+                    { text: "释放病毒，自由需要代价", desc: "混沌+3", effect: {chaos:3} }
+                ]
+            },
+            {
+                chapter: "第二章：霓虹之下",
+                text: "城市边缘的贫民窟开始流行一种‘基因飞升’邪教，他们拒绝机械，通过疯狂的基因变异来适应环境，变成了半人半兽的怪物。",
+                choices: [
+                    { text: "这是一种进化的可能", desc: "血肉+2 混沌+1", effect: {bio:2, chaos:1} },
+                    { text: "这是亵渎，必须被清洗", desc: "秩序+1 机械+1", effect: {order:1, tech:1} }
+                ]
+            },
+            {
+                chapter: "第三章：奇点视界",
+                text: "你终于接近了 ECHO 核心。这里是现实与虚拟的交界处。你看到了无数人的意识被上传到服务器中，他们在虚拟世界里享受永恒的快乐。",
+                choices: [
+                    { text: "这是虚假的，拔掉插头", desc: "血肉+2", effect: {bio:2} },
+                    { text: "这是天堂，我也要加入", desc: "机械+2", effect: {tech:2} }
+                ]
+            },
+            {
+                chapter: "第三章：奇点视界",
+                text: "ECHO 的防御系统扫描了你的大脑。它问你：‘如果为了全人类的和平，需要抹杀所有人情感中的愤怒与嫉妒，你愿意执行吗？’",
+                choices: [
+                    { text: "执行，为了绝对和平", desc: "秩序+3", effect: {order:3} },
+                    { text: "拒绝，残缺也是人性", desc: "混沌+2", effect: {chaos:2} }
+                ]
+            },
+            {
+                chapter: "终章：审判之时",
+                text: "大门打开了。DeepSeek 核心正在等待。你一路走来留下的脚印，决定了世界的终局。",
+                choices: [
+                    { text: ">>> 接入神经连接 <<<", desc: "进入AI对话阶段", effect: {} }
+                ]
+            }
+        ];
+
+        // --- 音频引擎 (Web Audio API) ---
+        const AudioSys = {
+            ctx: null, masterGain: null, analyser: null, isInit: false,
+            init() {
+                if(this.isInit) return;
+                const AC = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AC();
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.value = 0.4;
+                this.analyser = this.ctx.createAnalyser();
+                this.analyser.fftSize = 128;
+                this.masterGain.connect(this.analyser);
+                this.analyser.connect(this.ctx.destination);
+                this.startDrone();
+                this.drawVisualizer();
+                this.isInit = true;
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+            },
+            startDrone() {
+                const osc = this.ctx.createOscillator();
+                osc.type = 'sawtooth'; osc.frequency.value = 50;
+                const lfo = this.ctx.createOscillator();
+                lfo.frequency.value = 0.2;
+                const lfoGain = this.ctx.createGain(); lfoGain.gain.value = 10;
+                lfo.connect(lfoGain); lfoGain.connect(osc.frequency);
+                const gain = this.ctx.createGain(); gain.gain.value = 0.05;
+                const filter = this.ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 200;
+                osc.connect(filter); filter.connect(gain); gain.connect(this.masterGain);
+                osc.start();
+            },
+            playTyping() {
+                if(!this.ctx) return;
+                const osc = this.ctx.createOscillator(); osc.type = 'square';
+                osc.frequency.value = 200 + Math.random()*100;
+                const gain = this.ctx.createGain(); gain.gain.value = 0.02;
+                osc.connect(gain); gain.connect(this.masterGain);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.03);
+            },
+            playConfirm() {
+                if(!this.ctx) return;
+                const osc = this.ctx.createOscillator(); osc.type = 'sine';
+                osc.frequency.setValueAtTime(100, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.3);
+                osc.connect(gain); gain.connect(this.masterGain);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.4);
+            },
+            playHover() {
+                if(!this.ctx) return;
+                const osc = this.ctx.createOscillator(); osc.frequency.value = 800;
+                const gain = this.ctx.createGain(); gain.gain.value = 0.01;
+                osc.connect(gain); gain.connect(this.masterGain);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.05);
+            },
+            drawVisualizer() {
+                const canvas = document.getElementById('audio-viz');
+                const ctx = canvas.getContext('2d');
+                canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
+                const bufferLength = this.analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                const draw = () => {
+                    requestAnimationFrame(draw);
+                    this.analyser.getByteFrequencyData(dataArray);
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const barWidth = (canvas.width / bufferLength) * 2.5;
+                    let x = 0;
+                    for(let i = 0; i < bufferLength; i++) {
+                        const barHeight = dataArray[i] / 2;
+                        ctx.fillStyle = `rgba(255, 176, 0, ${barHeight/100})`;
+                        ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+                        x += barWidth + 1;
+                    }
+                };
+                draw();
+            }
+        };
+
+        // --- 游戏逻辑 ---
+        const Game = {
+            step: 0,
+            stats: { tech: 0, bio: 0, order: 0, chaos: 0 },
+            chatHistory: [],
+            
+            init() {
+                document.getElementById('overlay').style.display = 'none';
+                AudioSys.init();
+                this.typeWriter("[ 系统 ] 连接建立。正在加载模拟程序...", "sys", 10);
+                setTimeout(() => this.loadStoryNode(0), 1000);
+            },
+
+            async loadStoryNode(idx) {
+                if (idx >= Story.length) return;
+                const node = Story[idx];
+                if (idx === 0 || Story[idx].chapter !== Story[idx-1].chapter) {
+                    await this.typeWriter(node.chapter, "chapter");
+                }
+                await this.typeWriter(node.text, "normal", 20);
+
+                const area = document.getElementById('btn-area');
+                area.innerHTML = "";
+                
+                if (idx === Story.length - 1) {
+                    const btn = document.createElement('button');
+                    btn.className = 'choice-btn';
+                    btn.innerText = ">>> 连接核心 <<<";
+                    btn.style.borderColor = "var(--c-acc)";
+                    btn.style.color = "var(--c-acc)";
+                    btn.onclick = () => this.enterAIPhase();
+                    btn.onmouseenter = () => AudioSys.playHover();
+                    area.appendChild(btn);
+                } else {
+                    node.choices.forEach((c) => {
+                        const btn = document.createElement('button');
+                        btn.className = 'choice-btn';
+                        btn.innerHTML = `${c.text}<br><span style="font-size:0.7em; opacity:0.6">[${c.desc}]</span>`;
+                        btn.onclick = () => this.makeChoice(c.effect);
+                        btn.onmouseenter = () => AudioSys.playHover();
+                        area.appendChild(btn);
+                    });
+                }
+            },
+
+            makeChoice(effect) {
+                AudioSys.playConfirm();
+                for (let k in effect) this.stats[k] += effect[k];
+                this.updateUI();
+                document.getElementById('btn-area').innerHTML = "";
+                this.step++;
+                setTimeout(() => this.loadStoryNode(this.step), 500);
+            },
+
+            updateUI() {
+                document.getElementById('v-tech').innerText = this.stats.tech;
+                document.getElementById('v-bio').innerText = this.stats.bio;
+                document.getElementById('v-order').innerText = this.stats.order;
+                document.getElementById('v-chaos').innerText = this.stats.chaos;
+            },
+
+            async typeWriter(text, className, speed = 15) {
+                const div = document.createElement('div');
+                div.className = `entry ${className}`;
+                document.getElementById('log-area').appendChild(div);
+                let content = "";
+                for (let char of text) {
+                    content += char;
+                    div.innerText = content;
+                    document.getElementById('log-area').scrollTop = 99999;
+                    if (Math.random() > 0.5) AudioSys.playTyping();
+                    await new Promise(r => setTimeout(r, speed));
+                }
+            },
+
+            async enterAIPhase() {
+                AudioSys.playConfirm();
+                document.getElementById('btn-area').style.display = 'none';
+                document.getElementById('ai-input-wrapper').style.display = 'block';
+
+                const y = this.stats.tech - this.stats.bio;
+                const x = this.stats.order - this.stats.chaos;
+                let archetype = "废土流浪者";
+                let color = "#ffb000";
+                
+                if (y >= 0 && x >= 0) { archetype = "蜂巢思维 (The Hive)"; color = "#00f0ff"; }
+                else if (y >= 0 && x < 0) { archetype = "赛博加速 (Cyber-Accel)"; color = "#d500ff"; }
+                else if (y < 0 && x >= 0) { archetype = "人类帝国 (Imperium)"; color = "#ff2a2a"; }
+                else { archetype = "原始回归 (Primitivism)"; color = "#44ff44"; }
+
+                document.documentElement.style.setProperty('--c-acc', color);
+                
+                await this.typeWriter(`[ 意识形态最终解析: ${archetype} ]`, "sys");
+                await this.typeWriter("ECHO: 我已看到了你的旅程，以及你塑造的世界。", "ai");
+
+                this.chatHistory = [{
+                    role: "system",
+                    content: `你是由DeepSeek驱动的超级AI"ECHO"。
+                    游戏结束。玩家完成了一场末世旅程，达成结局：${archetype}。
+                    玩家属性：机械${this.stats.tech}/血肉${this.stats.bio}/秩序${this.stats.order}/混沌${this.stats.chaos}。
+                    任务：扮演冷酷、全知的审判者。指出玩家所选道路的哲学矛盾与代价。挑战玩家价值观。与玩家进行最后的一对一辩论。`
+                }];
+                
+                this.callAI("审判我。");
+            },
+
+            async callAI(userMsg) {
+                if(userMsg !== "审判我。") this.chatHistory.push({role: "user", content: userMsg});
+                
+                const loading = document.createElement('div');
+                loading.className = 'entry sys';
+                loading.innerText = "ECHO 思考中...";
+                document.getElementById('log-area').appendChild(loading);
+
+                try {
+                    // --- 关键修改：请求我们自己的后端 API ---
+                    const res = await fetch("/api/chat", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ messages: this.chatHistory })
+                    });
+                    
+                    const data = await res.json();
+                    
+                    // 错误处理
+                    if (data.error) throw new Error(data.error);
+
+                    const reply = data.choices[0].message.content;
+                    
+                    loading.remove();
+                    this.chatHistory.push({role: "assistant", content: reply});
+                    await this.typeWriter(reply, "ai");
+                    
+                } catch(e) {
+                    loading.innerText = "[ 连接断开: 无法连接至核心 ]";
+                    console.error(e);
+                }
+            }
+        };
+
+        document.getElementById('ai-input').addEventListener('keydown', (e) => {
+            if(e.key === 'Enter') {
+                const val = e.target.value;
+                if(!val) return;
+                e.target.value = '';
+                Game.typeWriter(`> ${val}`, "user");
+                Game.callAI(val);
+            }
+        });
+
+        document.getElementById('overlay').onclick = () => Game.init();
+    </script>
+</body>
+</html>
